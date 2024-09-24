@@ -4,7 +4,7 @@
 ![blaz](https://github.com/user-attachments/assets/66da8b5a-1944-43f8-a820-6126d9384ac5)
 
 
-This repository contains detailed writeups of the challenges we solved during the BlazCTF 2024. We hope these writeups can help others in the CTF community to learn from our approaches, and let's continue growing together!
+This repository contains detailed writeups of the challenges we solved during the BlazCTF 2024. We hope these writeups can help others in the web3 security journey, and let's continue growing together!
 
 ## Challenges & Writeup
 - [Bigen Layer](https://github.com/fuzzland/blazctf-2024/tree/main/bigen-layer) - [Writep by nam]

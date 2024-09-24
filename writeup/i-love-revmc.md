@@ -4,12 +4,12 @@ Author: cbd1913 ([X/Twitter](https://x.com/cbd1913))
 
 ## Background
 
-In this challenge, we have a modified version of `anvil` and `revm`, where a JIT compiler feature is added. This feature is enabled by `revmc` crate. Following is the main modifications.
+In this challenge, we have a modified version of `anvil` and `revm`, where a JIT compiler feature is added. This feature is enabled by the `revmc` crate. The following are the main modifications.
 
 ### foundry and anvil
 
-- Dependencies about `revm` is updated to local path, and `revmc` is added. Besides, `optional_balance_check` and `optional_disable_eip3074` features are enabled for `revm` in `anvil`.
-- A new JSON RPC method `blaz_jitCompile` is added to compile contract's bytecode into a shared library. It will execute `jit-compiler` command to compile bytecode into library.
+- Dependencies for `revm` are updated to a local path, and `revmc` is added. Additionally, the `optional_balance_check` and `optional_disable_eip3074` features are enabled for `revm` in `anvil`.
+- A new JSON RPC method `blaz_jitCompile` is added to compile a contract's bytecode into a shared library. It will execute the `jit-compiler` command to compile the bytecode into a library.
 
     ```rust
     // some code is omitted for brevity
@@ -26,9 +26,9 @@ In this challenge, we have a modified version of `anvil` and `revm`, where a JIT
         .map_err(|e| BlockchainError::Internal(format!("Failed to run jit-compile: {e}")))?;
     ```
 
-- After that, `jit_addr` will be set in anvil backend, and `new_evm_with_jit` will be used to process new transaction in `executor.rs`
-- In new tx processing logic, it uses `JitHelper::get_function` to override existing `get_function` in `inspector.rs`
-- In `JitHelper`, it dynamically loads `libjit.so`, calls `jit_init` with some functino pointers to initialize it, then returns `real_jit_fn` as `EvmCompilerFn`. This fundction should be called somewhere when a tx is executed.
+- After that, `jit_addr` will be set in the anvil backend, and `new_evm_with_jit` will be used to process new transactions in `executor.rs`.
+- In the new transaction processing logic, it uses `JitHelper::get_function` to override the existing `get_function` in `inspector.rs`.
+- In `JitHelper`, it dynamically loads `libjit.so`, calls `jit_init` with some function pointers to initialize it, then returns `real_jit_fn` as `EvmCompilerFn`. This function should be called somewhere when a transaction is executed.
 
     ```rust
     // some code is omitted for brevity
@@ -49,32 +49,32 @@ In this challenge, we have a modified version of `anvil` and `revm`, where a JIT
 
 ### revm and revmc
 
-- A field `disable_authorization` is added to `TxEnv` when `optional_disable_eip3074` feature is enabled, and `disable_balance_check` is moved up in `CfgEnv`
-- In `translate_inst` inside `revmc`, which is the core logic of translating bytecode into IR (internal representation), it modifies the logic of processing `op::BLOBHASH` insturction to use `build_blobhash`.
-- In `build_blobhash`, it has complex logic of building IR code for reading blob hash. It calculates the memory offset to read length from `blob_hashes` field in `TxEnv`, checks whether it's out of bounds, gets the element pointer of desired blob hash item, reads and returns it.
+- A field `disable_authorization` is added to `TxEnv` when the `optional_disable_eip3074` feature is enabled, and `disable_balance_check` is moved up in `CfgEnv`.
+- In `translate_inst` inside `revmc`, which is the core logic of translating bytecode into IR (internal representation), it modifies the logic of processing the `op::BLOBHASH` instruction to use `build_blobhash`.
+- In `build_blobhash`, it has complex logic for building IR code to read the blob hash. It calculates the memory offset to read the length from the `blob_hashes` field in `TxEnv`, checks whether it's out of bounds, gets the element pointer of the desired blob hash item, reads, and returns it.
 
 ### JIT Compiler
 
-- In `linker.c` it declares many function pointers in `linker.c` like `__revmc_builtin_gas_price_ptr` and `__revmc_builtin_balance_ptr`, which are `0` and will be set by `jit_init()`
-- In `load_flag()` it reads the flag and store it at memory address `0x13370000`
-- According to `anvil-image/build.sh`, `linker.c` will be compiled into `libjit_dummy.o`
-- In JIT compiler's main logic `main.rs`, it reads from `/tmp/code.hex` and use `EvmCompiler` from `revmc` to compile it into `/tmp/libjit_main.o`, which is the implementation of `real_jit_fn`.
-- Then it's combined with `/tmp/libjit_dummy.o` to produce final shared library `/lib/libjit.so`
+- In `linker.c`, it declares many function pointers like `__revmc_builtin_gas_price_ptr` and `__revmc_builtin_balance_ptr`, which are `0` and will be set by `jit_init()`.
+- In `load_flag()`, it reads the flag and stores it at memory address `0x13370000`.
+- According to `anvil-image/build.sh`, `linker.c` will be compiled into `libjit_dummy.o`.
+- In the JIT compiler's main logic `main.rs`, it reads from `/tmp/code.hex` and uses `EvmCompiler` from `revmc` to compile it into `/tmp/libjit_main.o`, which is the implementation of `real_jit_fn`.
+- Then it's combined with `/tmp/libjit_dummy.o` to produce the final shared library `/lib/libjit.so`.
 
 ## Analysis
 
 We can understand the whole flow now:
 
-1. Deploy a smart contract
-1. Call `blaz_jitCompile` to compile it. It executes pre-compiled `jit-compiler` binary which does the following:
-    - Read the smart contract's bytecode and use `revmc` to translate each EVM op code into IR code.
-    - The IR code is compiled into `real_jit_fn` of the shared library `/lib/libjit.so`
-1. Submit a transaction with `to` address being the malicious contract
-1. `real_jit_fn` will be called with some arguments related to current transaction. The program logic written by `jit-compiler` is executed at this step.
-    - During execution of `real_jit_fn`, it can call some `revmc` built-in functions to interact with Rust code
+1. Deploy a smart contract.
+1. Call `blaz_jitCompile` to compile it. It executes the pre-compiled `jit-compiler` binary which does the following:
+    - Reads the smart contract's bytecode and uses `revmc` to translate each EVM opcode into IR code.
+    - The IR code is compiled into `real_jit_fn` of the shared library `/lib/libjit.so`.
+1. Submit a transaction with the `to` address being the malicious contract.
+1. `real_jit_fn` will be called with some arguments related to the current transaction. The program logic written by `jit-compiler` is executed at this step.
+    - During the execution of `real_jit_fn`, it can call some `revmc` built-in functions to interact with Rust code.
 1. We need to find a way to let `real_jit_fn` read the flag from memory `0x13370000`.
 
-Because `real_jit_fn` is compiled from IR code generated by `revmc`, we need to find bug in `revmc` which may generate wrong IR code and cause out of bounds memory read. The only modified implementation in `revmc` is `BLOBHASH` op code, so we should investigate its logic.
+Because `real_jit_fn` is compiled from IR code generated by `revmc`, we need to find a bug in `revmc` which may generate incorrect IR code and cause out-of-bounds memory read. The only modified implementation in `revmc` is the `BLOBHASH` opcode, so we should investigate its logic.
 
 ```rust
 fn build_blobhash(&mut self) {
@@ -136,19 +136,19 @@ fn build_blobhash(&mut self) {
 }
 ```
 
-Its main logic is:
+The main logic is:
 
-1. Determine the memory offset of length of `blob_hashes` in `Env`. It's calculated by finding offset of `Tx` struct in `Env`, then adding offsets of `blob_hashes` field in `Tx`, then adding offset of `len` field in `blob_hashes`.
-1. Same logic is used to get `blob_hashes`'s pointer to its first item.
-1. Reads length of `blob_hashes` from `blobhash_len_ptr`, and build an if condition based on whether `index` is out of bounds.
-1. If out of bounds, it returns 0. Otherwise it reads the `blob_hashes` item at `index` and returns it.
-1. The memory address of `blob_hashes[i]` is calculated by `blobhash_ptr + 32 * index`.
+1. Determine the memory offset of the length of `blob_hashes` in `Env`. This is calculated by finding the offset of the `Tx` struct in `Env`, then adding the offsets of the `blob_hashes` field in `Tx`, and finally adding the offset of the `len` field in `blob_hashes`.
+2. Use the same logic to get the pointer to the first item of `blob_hashes`.
+3. Read the length of `blob_hashes` from `blobhash_len_ptr`, and build a condition to check whether `index` is out of bounds.
+4. If out of bounds, return 0. Otherwise, read the `blob_hashes` item at `index` and return it.
+5. The memory address of `blob_hashes[i]` is calculated by `blobhash_ptr + 32 * index`.
 
-The intersting part is that this code is building another program to be executed at transaction runtime, so when building IR code for `BLOBHASH` operation, it doesn't know the exact input of `Env` and `index`, and build some symbolic logic to handle them. Therefore, if the calculated memory address of `blob_hashes[i]` is not as expected, it will trigger out of bounds memory read.
+The interesting part is that this code is building another program to be executed at transaction runtime. When building IR code for the `BLOBHASH` operation, it doesn't know the exact input of `Env` and `index`, so it builds some symbolic logic to handle them. Therefore, if the calculated memory address of `blob_hashes[i]` is not as expected, it will trigger an out-of-bounds memory read.
 
 ## The Bug (Spoiler)
 
-The calculation of `blob_hashes[i]` memory address is incorrect. At the compile time of bytecode, it's using pre-compiled `jit-compiler` binary, which depends on `revm` and `revmc` crates with no other feature flags turned on. However at runtime, `anvil` has enabled several features like `optional_disable_eip3074`, `optional_balance_check` for `revm`, which introduces memory layout shift in `CfgEnv` and `TxEnv`.
+The calculation of the `blob_hashes[i]` memory address is incorrect. At the compile time of the bytecode, it uses a pre-compiled `jit-compiler` binary, which depends on the `revm` and `revmc` crates with no other feature flags turned on. However, at runtime, `anvil` has enabled several features like `optional_disable_eip3074` and `optional_balance_check` for `revm`, which introduces a memory layout shift in `CfgEnv` and `TxEnv`.
 
 ```rust
 struct CfgEnv {
@@ -171,7 +171,7 @@ struct TxEnv {
 }
 ```
 
-At runtime the size of `CfgEnv` and `TxEnv` are larger than the size when building IR code, so the memory address of `blob_hashes` field in `TxEnv` is different. After printing the struct and size, we can find the actual shift is 48 bytes, which means `blob_hashes` field in `TxEnv` is 48 bytes ahead of the expected position of JIT Compiler. It makes the calculated memory address of `blob_hashes[i]` pointing to the previous field in `TxEnv`, which is `gas_priority_fee`.
+At runtime, the sizes of `CfgEnv` and `TxEnv` are larger than their sizes when building the IR code, so the memory address of the `blob_hashes` field in `TxEnv` is different. After printing the struct and size, we found that the actual shift is 48 bytes, which means the `blob_hashes` field in `TxEnv` is 48 bytes ahead of the expected position of the JIT Compiler. This causes the calculated memory address of `blob_hashes[i]` to point to the previous field in `TxEnv`, which is `gas_priority_fee`.
 
 ```txt
 +---------------------------------+--------------------+--------------------+-----------------+
@@ -179,11 +179,11 @@ At runtime the size of `CfgEnv` and `TxEnv` are larger than the size when buildi
 +---------------------------------+--------------------+--------------------+-----------------+
 ```
 
-After the memory shift, when it reads `blob_hashes` length it actually reads the 9th to 16th bytes of `gas_priority_fee`. As for `blob_hashes` element pointer, it reads the 1st to 8th bytes of `gas_priority_fee`. Therefore, we can control the value of `gas_priority_fee` to bypass the length check and make it read the flag!
+After the memory shift, when it reads the `blob_hashes` length, it actually reads the 9th to 16th bytes of `gas_priority_fee`. For the `blob_hashes` element pointer, it reads the 1st to 8th bytes of `gas_priority_fee`. Therefore, we can control the value of `gas_priority_fee` to bypass the length check and make it read the flag!
 
 ### Exploit
 
-To read `0x13370000` memory address, we can set `index = 0` and let it reads `0x13370000` from `blobhash_ptr`. Also, `gas_priority_fee` should be at least `2**64` so it can read `1` for `blobhash_len` to bypass the length check. This will make `BLOBHASH` op code returns the memory content of `0x13370000` to EVM stack. The remaining steps are trying to leak the stack element.
+To read the `0x13370000` memory address, we can set `index = 0` and let it read `0x13370000` from `blobhash_ptr`. Additionally, `gas_priority_fee` should be at least `2**64` so it can read `1` for `blobhash_len` to bypass the length check. This will make the `BLOBHASH` opcode return the memory content of `0x13370000` to the EVM stack. The remaining steps involve trying to leak the stack element.
 
 ## My Solution
 
@@ -211,9 +211,9 @@ The bytecode I used is `5f496004351c60011660145760015f5260205ff35b5f5ffd`:
 [17] REVERT
 ```
 
-It will call BLOBHASH with `index = 0`, and shift the result based on call data to leak one bit of stack element. The transaction will be reverted if the `i`-th bit of the stack element is `1`. When sending transaction, we need to set max priority fee to `2**64 + 0x13370000` to meet the above condition. After sending 256 transactions, we can recover the full flag.
+It will call BLOBHASH with `index = 0` and shift the result based on call data to leak one bit of the stack element. The transaction will be reverted if the `i`-th bit of the stack element is `1`. When sending the transaction, we need to set the max priority fee to `2**64 + 0x13370000` to meet the above condition. After sending 256 transactions, we can recover the full flag.
 
-After I checked the official solution, I found that it just uses `LOG0` to log the stack element, which is more efficient!
+After checking the official solution, I found that it simply uses `LOG0` to log the stack element, which is more efficient!
 
 `6008600a5f3960095ff35f495f5260205fa000`
 

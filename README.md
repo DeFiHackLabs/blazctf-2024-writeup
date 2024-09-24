@@ -3,10 +3,10 @@
 🔥  **DeFiHackLabs Ranked 4th in #BlazCTF!** 💪  
 ![blaz](https://github.com/user-attachments/assets/66da8b5a-1944-43f8-a820-6126d9384ac5)
 
-
 This repository contains detailed writeups of the challenges we solved during the BlazCTF 2024. We hope these writeups can help others in the web3 security journey, and let's continue growing together!
 
 ## Challenges & Writeup
+
 - [Bigen Layer](https://github.com/fuzzland/blazctf-2024/tree/main/bigen-layer) - [Writep by nam]
 - [Chisel as a Service](https://github.com/fuzzland/blazctf-2024/tree/main/chisel-as-a-service)
 - [Cyber Cartel](https://github.com/fuzzland/blazctf-2024/tree/main/cyber-cartel)
@@ -14,6 +14,7 @@ This repository contains detailed writeups of the challenges we solved during th
 - [Eight Inch](https://github.com/fuzzland/blazctf-2024/tree/main/eight-inch)
 - [Enterprise Blockchain](https://github.com/fuzzland/blazctf-2024/tree/main/enterprise-blockchain)
 - [I Love RevMC](https://github.com/fuzzland/blazctf-2024/tree/main/i-love-revmc)
+  - [Writeup](./writeup/i-love-revmc.md)
 - [Oh Fuck OYM](https://github.com/fuzzland/blazctf-2024/tree/main/oh-fuck-oym)
 - [Oh Fuck Pendle](https://github.com/fuzzland/blazctf-2024/tree/main/oh-fuck-pendle)
 - [SafuSol](https://github.com/fuzzland/blazctf-2024/tree/main/safusol)
@@ -26,6 +27,7 @@ This repository contains detailed writeups of the challenges we solved during th
 - [Teragas](https://github.com/fuzzland/blazctf-2024/tree/main/teragas)
 
 ## Acknowledgements
+
 Special thanks to Fuzzland for organizing an awesome BlazCTF and to our amazing teammates for their dedication and hard work!
 
 ## Supporter
@@ -38,4 +40,3 @@ Special thanks to Fuzzland for organizing an awesome BlazCTF and to our amazing 
 <a href="https://x.com/GCCofCommons">
   <img src="https://github.com/user-attachments/assets/4da1e7de-2068-4c3f-a8b9-60beb0ea32ee" alt="image" width="200"/>
 </a>
-

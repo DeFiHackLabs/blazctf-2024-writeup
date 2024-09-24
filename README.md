@@ -31,7 +31,7 @@ Special thanks to Fuzzland for organizing an awesome BlazCTF and to our amazing 
 ## Supporter
 
 <a href="https://x.com/fuzzland_">
-  <img src="https://github.com/user-attachments/assets/c5a1ea17-3d56-412a-87bb-fef2187eadad" alt="image" width="300"/>
+  <img src="https://github.com/user-attachments/assets/02884ee6-fd31-4f50-b141-e760da700689" alt="image" width="300"/>
 </a>
 
 <a href="https://x.com/GCCofCommons">

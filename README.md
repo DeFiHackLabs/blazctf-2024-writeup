@@ -11,6 +11,7 @@ This repository contains detailed writeups of the challenges we solved during th
 - [Chisel as a Service](https://github.com/fuzzland/blazctf-2024/tree/main/chisel-as-a-service)
   - [Writeup](https://github.com/minaminao/my-ctf-challenges/blob/main/ctfs/blazctf-2024/chisel-as-a-service/solution/README.md)
 - [Cyber Cartel](https://github.com/fuzzland/blazctf-2024/tree/main/cyber-cartel)
+  - [Writeup](./writeup/cyber-cartel.md)
 - [Doju](https://github.com/fuzzland/blazctf-2024/tree/main/doju)
 - [Eight Inch](https://github.com/fuzzland/blazctf-2024/tree/main/eight-inch)
 - [Enterprise Blockchain](https://github.com/fuzzland/blazctf-2024/tree/main/enterprise-blockchain) - 

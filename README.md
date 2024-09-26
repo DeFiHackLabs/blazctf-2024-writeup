@@ -19,6 +19,7 @@ This repository contains detailed writeups of the challenges we solved during th
   - [Writeup](./writeup/i-love-revmc.md)
 - [Oh Fuck OYM](https://github.com/fuzzland/blazctf-2024/tree/main/oh-fuck-oym)
 - [Oh Fuck Pendle](https://github.com/fuzzland/blazctf-2024/tree/main/oh-fuck-pendle)
+  - [Writeup](./writeup/oh-fuck-pendle.md)
 - [SafuSol](https://github.com/fuzzland/blazctf-2024/tree/main/safusol)
 - [Solalloc](https://github.com/fuzzland/blazctf-2024/tree/main/solalloc)
 - [Tony Lend](https://github.com/fuzzland/blazctf-2024/tree/main/tony-lend)

